@@ -1,0 +1,29 @@
+name: Release
+
+# Push a tag such as v1.2.0 to build the app and attach it to a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: swift test
+
+      - name: Build
+        run: VERSION="${GITHUB_REF_NAME#v}" REPOSITORY="$GITHUB_REPOSITORY" ./Scripts/build-app.sh
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" "dist/MSI-Display-Control-$version.zip" \
+            --title "MSI Display Control $version" --generate-notes
